@@ -301,6 +301,46 @@
     }
 
     /* =========================================
+       LUMOS OVERRIDES: ORBIT & TERMINAL
+       ========================================= */
+
+    /* 1. The Orbit "Brain" System */
+    body.lumos-mode .orbit-core {
+      background: radial-gradient(circle, rgba(255, 197, 0, 0.25), transparent 70%);
+      border-color: rgba(255, 197, 0, 0.4);
+      animation: core-pulse-lumos 3s ease-in-out infinite;
+    }
+    
+    /* We have to override the animation keyframes so the glowing pulse is gold, not green */
+    @keyframes core-pulse-lumos {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 197, 0, 0.2), 0 0 24px rgba(255, 197, 0, 0.15); }
+      50% { box-shadow: 0 0 0 14px rgba(255, 197, 0, 0), 0 0 40px rgba(255, 197, 0, 0.25); }
+    }
+
+    body.lumos-mode .orbit-ring { border-color: rgba(255, 197, 0, 0.2); }
+    body.lumos-mode .orbit-ring-2 { border-color: rgba(116, 0, 1, 0.3); } /* Crimson */
+    body.lumos-mode .orbit-ring-3 { border-color: rgba(211, 166, 37, 0.2); } /* Deep Gold */
+    
+    body.lumos-mode .orbiter { background: rgba(255, 197, 0, 0.1); border-color: rgba(255, 197, 0, 0.3); }
+    body.lumos-mode .orbiter.b { background: rgba(116, 0, 1, 0.1); border-color: rgba(116, 0, 1, 0.3); }
+    body.lumos-mode .orbiter.p { background: rgba(211, 166, 37, 0.1); border-color: rgba(211, 166, 37, 0.3); }
+
+    /* 2. The Terminal Box */
+    body.lumos-mode .terminal-wrap {
+      border-color: rgba(255, 197, 0, 0.3);
+      box-shadow: 0 0 40px rgba(255, 197, 0, 0.1);
+    }
+    
+    body.lumos-mode .term-bar {
+      border-color: rgba(255, 197, 0, 0.15);
+    }
+    
+    /* Swap the hardcoded green terminal success text to Gold */
+    body.lumos-mode .tog {
+      color: #ffc500; 
+    }
+
+    /* =========================================
        RESPONSIVE DESIGN (Consolidated)
        ========================================= */
 
@@ -653,15 +693,35 @@ const parallaxEls=[
 })();
 
 /* ── HERO CANVAS ── */
+/* ── HERO CANVAS ── */
 const hc=document.getElementById('hero-canvas'),hx=hc.getContext('2d');
 let W,H,nodes=[];
 function rsz(){W=hc.width=hc.offsetWidth;H=hc.height=hc.offsetHeight;}
 rsz();window.addEventListener('resize',rsz);
 for(let i=0;i<80;i++)nodes.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,r:Math.random()*2+1});
+
 (function dh(){
   hx.clearRect(0,0,W,H);
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y);if(d<130){hx.beginPath();hx.moveTo(nodes[i].x,nodes[i].y);hx.lineTo(nodes[j].x,nodes[j].y);hx.strokeStyle=`rgba(0,255,200,${(1-d/130)*.18})`;hx.lineWidth=1;hx.stroke();}}
-  nodes.forEach(n=>{hx.beginPath();hx.arc(n.x,n.y,n.r,0,Math.PI*2);hx.fillStyle='rgba(0,255,200,0.45)';hx.fill();n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;});
+  
+  // Check if Lumos is active to set the color (Gold vs Neon Green)
+  const isLumos = document.body.classList.contains('lumos-mode');
+  const cR = isLumos ? 255 : 0, cG = isLumos ? 197 : 255, cB = isLumos ? 0 : 200;
+
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    const d=Math.hypot(nodes[i].x-nodes[j].x,nodes[i].y-nodes[j].y);
+    if(d<130){
+      hx.beginPath();hx.moveTo(nodes[i].x,nodes[i].y);hx.lineTo(nodes[j].x,nodes[j].y);
+      hx.strokeStyle=`rgba(${cR},${cG},${cB},${(1-d/130)*.18})`;
+      hx.lineWidth=1;hx.stroke();
+    }
+  }
+  nodes.forEach(n=>{
+    hx.beginPath();hx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    hx.fillStyle=`rgba(${cR},${cG},${cB},0.45)`;
+    hx.fill();
+    n.x+=n.vx;n.y+=n.vy;
+    if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;
+  });
   requestAnimationFrame(dh);
 })();
 
@@ -695,81 +755,61 @@ let ot=0;
 })();
 
 /* ── COMPUTER VISION TRACKER ── */
+/* ── COMPUTER VISION TRACKER ── */
 const cvc = document.getElementById('cv-canvas');
 if (cvc) {
   const cx = cvc.getContext('2d');
   const targets = [];
-
-  // Create abstract "objects" to track
   for(let i=0; i<6; i++) {
-    targets.push({
-      x: Math.random() * cvc.width,
-      y: Math.random() * cvc.height,
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 1.2,
-      size: Math.random() * 15 + 15
-    });
+    targets.push({ x: Math.random() * cvc.width, y: Math.random() * cvc.height, vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, size: Math.random() * 15 + 15 });
   }
 
   (function drawCV(){
-    // Clear with dark background
+    // Set colors dynamically based on theme
+    const isLumos = document.body.classList.contains('lumos-mode');
+    const cPrimary = isLumos ? '255, 197, 0' : '0, 255, 200';   // Gold vs Green
+    const cSecondary = isLumos ? '190, 0, 0' : '0, 184, 255';   // Crimson vs Blue
+    const cTertiary = isLumos ? '190, 0, 0' : '168, 85, 247';   // Crimson vs Purple
+
     cx.fillStyle = 'rgba(8, 11, 16, 1)';
     cx.fillRect(0, 0, cvc.width, cvc.height);
 
-    // Draw subtle processing grid
-    cx.strokeStyle = 'rgba(0, 255, 200, 0.04)';
+    cx.strokeStyle = `rgba(${cPrimary}, 0.04)`;
     cx.lineWidth = 1;
     for(let i=0; i<cvc.width; i+=30) { cx.beginPath(); cx.moveTo(i,0); cx.lineTo(i,cvc.height); cx.stroke(); }
     for(let i=0; i<cvc.height; i+=30) { cx.beginPath(); cx.moveTo(0,i); cx.lineTo(cvc.width,i); cx.stroke(); }
 
     targets.forEach(t => {
-      // Move targets
-      t.x += t.vx;
-      t.y += t.vy;
+      t.x += t.vx; t.y += t.vy;
       if(t.x < 0 || t.x > cvc.width) t.vx *= -1;
       if(t.y < 0 || t.y > cvc.height) t.vy *= -1;
 
-      // Draw the tracked feature (abstract dot)
-      cx.beginPath();
-      cx.arc(t.x, t.y, 3, 0, Math.PI*2);
-      cx.fillStyle = 'rgba(168, 85, 247, 0.6)'; // Purple accent
+      cx.beginPath(); cx.arc(t.x, t.y, 3, 0, Math.PI*2);
+      cx.fillStyle = `rgba(${cTertiary}, 0.6)`; 
       cx.fill();
 
-      // Draw dynamic bounding boxes
       const boxSize = t.size;
-      cx.strokeStyle = 'rgba(0, 255, 200, 0.7)';
+      cx.strokeStyle = `rgba(${cPrimary}, 0.7)`;
       cx.lineWidth = 1.5;
       
-      // Top left corner
       cx.beginPath(); cx.moveTo(t.x - boxSize, t.y - boxSize + 8); cx.lineTo(t.x - boxSize, t.y - boxSize); cx.lineTo(t.x - boxSize + 8, t.y - boxSize); cx.stroke();
-      // Top right corner
       cx.beginPath(); cx.moveTo(t.x + boxSize - 8, t.y - boxSize); cx.lineTo(t.x + boxSize, t.y - boxSize); cx.lineTo(t.x + boxSize, t.y - boxSize + 8); cx.stroke();
-      // Bottom left corner
       cx.beginPath(); cx.moveTo(t.x - boxSize, t.y + boxSize - 8); cx.lineTo(t.x - boxSize, t.y + boxSize); cx.lineTo(t.x - boxSize + 8, t.y + boxSize); cx.stroke();
-      // Bottom right corner
       cx.beginPath(); cx.moveTo(t.x + boxSize - 8, t.y + boxSize); cx.lineTo(t.x + boxSize, t.y + boxSize); cx.lineTo(t.x + boxSize, t.y + boxSize - 8); cx.stroke();
       
-      // Inner crosshair
       cx.beginPath(); cx.moveTo(t.x, t.y - 6); cx.lineTo(t.x, t.y + 6); cx.moveTo(t.x - 6, t.y); cx.lineTo(t.x + 6, t.y);
-      cx.strokeStyle = 'rgba(0, 184, 255, 0.4)'; // Blue accent
+      cx.strokeStyle = `rgba(${cSecondary}, 0.4)`; 
       cx.stroke();
     });
 
-    // Sweeping scanner line
     const scanY = (Date.now() / 15) % cvc.height;
-    cx.beginPath();
-    cx.moveTo(0, scanY);
-    cx.lineTo(cvc.width, scanY);
-    cx.strokeStyle = 'rgba(0, 255, 200, 0.4)';
-    cx.lineWidth = 1.5;
-    cx.stroke();
+    cx.beginPath(); cx.moveTo(0, scanY); cx.lineTo(cvc.width, scanY);
+    cx.strokeStyle = `rgba(${cPrimary}, 0.4)`; cx.lineWidth = 1.5; cx.stroke();
     
-    // Scanner light trail
     const grad = cx.createLinearGradient(0, scanY - 25, 0, scanY);
-    grad.addColorStop(0, 'rgba(0, 255, 200, 0)');
-    grad.addColorStop(1, 'rgba(0, 255, 200, 0.08)');
-    cx.fillStyle = grad;
-    cx.fillRect(0, scanY - 25, cvc.width, 25);
+    grad.addColorStop(0, `rgba(${cPrimary}, 0)`);
+    grad.addColorStop(1, `rgba(${cPrimary}, 0.08)`);
+    cx.fillStyle = grad; cx.fillRect(0, scanY - 25, cvc.width, 25);
 
     requestAnimationFrame(drawCV);
   })();
@@ -832,35 +872,40 @@ const rc=document.getElementById('radar-canvas'),rx2=rc.getContext('2d');
 let radarA=0,pulses=[];
 setInterval(()=>pulses.push({r:0,a:.9}),1800);
 const CX=140,CY=140;
+
 (function rd(){
+  // Check theme state
+  const isLumos = document.body.classList.contains('lumos-mode');
+  const cPrim = isLumos ? '255,197,0' : '0,255,200'; // Gold vs Green
+  const cSec = isLumos ? '190,0,0' : '0,184,255';    // Crimson vs Blue
+
   rx2.clearRect(0,0,280,280);
-  // bg gradient
   const g=rx2.createRadialGradient(CX,CY,0,CX,CY,110);
-  g.addColorStop(0,'rgba(0,255,200,.04)');g.addColorStop(1,'transparent');
+  g.addColorStop(0,`rgba(${cPrim},.04)`);g.addColorStop(1,'transparent');
   rx2.fillStyle=g;rx2.fillRect(0,0,280,280);
-  // rings
-  [38,76,114].forEach(r=>{rx2.beginPath();rx2.arc(CX,CY,r,0,Math.PI*2);rx2.strokeStyle='rgba(0,255,200,.1)';rx2.lineWidth=1;rx2.stroke();});
-  // crosshairs
-  rx2.strokeStyle='rgba(0,255,200,.07)';rx2.lineWidth=1;
+  
+  [38,76,114].forEach(r=>{rx2.beginPath();rx2.arc(CX,CY,r,0,Math.PI*2);rx2.strokeStyle=`rgba(${cPrim},.1)`;rx2.lineWidth=1;rx2.stroke();});
+  
+  rx2.strokeStyle=`rgba(${cPrim},.07)`;rx2.lineWidth=1;
   [0,1].forEach(v=>{rx2.beginPath();if(v){rx2.moveTo(CX,CY-120);rx2.lineTo(CX,CY+120);}else{rx2.moveTo(CX-120,CY);rx2.lineTo(CX+120,CY);}rx2.stroke();});
-  // sweep sector
+  
   radarA+=.022;
-  for(let i=0;i<80;i++){const a=radarA-(Math.PI*.5)*(i/80);rx2.beginPath();rx2.moveTo(CX,CY);rx2.arc(CX,CY,116,a,a+(Math.PI*.5)/80);rx2.fillStyle=`rgba(0,255,200,${(1-i/80)*.17})`;rx2.fill();}
-  // sweep line
-  rx2.beginPath();rx2.moveTo(CX,CY);rx2.lineTo(CX+Math.cos(radarA)*116,CY+Math.sin(radarA)*116);rx2.strokeStyle='rgba(0,255,200,.75)';rx2.lineWidth=1.5;rx2.stroke();
-  // blips
+  for(let i=0;i<80;i++){const a=radarA-(Math.PI*.5)*(i/80);rx2.beginPath();rx2.moveTo(CX,CY);rx2.arc(CX,CY,116,a,a+(Math.PI*.5)/80);rx2.fillStyle=`rgba(${cPrim},${(1-i/80)*.17})`;rx2.fill();}
+  
+  rx2.beginPath();rx2.moveTo(CX,CY);rx2.lineTo(CX+Math.cos(radarA)*116,CY+Math.sin(radarA)*116);rx2.strokeStyle=`rgba(${cPrim},.75)`;rx2.lineWidth=1.5;rx2.stroke();
+  
   [{a:.7,r:52},{a:2.1,r:90},{a:4.4,r:66},{a:5.8,r:100}].forEach(b=>{
     const diff=((radarA-b.a)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
     const fade=diff<Math.PI*.5?1:Math.max(0,1-(diff-Math.PI*.5)/(Math.PI*.8));
-    if(fade>0){rx2.beginPath();rx2.arc(CX+Math.cos(b.a)*b.r,CY+Math.sin(b.a)*b.r,4,0,Math.PI*2);rx2.fillStyle=`rgba(0,255,200,${fade*.9})`;rx2.fill();}
+    if(fade>0){rx2.beginPath();rx2.arc(CX+Math.cos(b.a)*b.r,CY+Math.sin(b.a)*b.r,4,0,Math.PI*2);rx2.fillStyle=`rgba(${cPrim},${fade*.9})`;rx2.fill();}
   });
-  // pulse rings
+  
   pulses=pulses.filter(p=>p.a>0);
-  pulses.forEach(p=>{rx2.beginPath();rx2.arc(CX,CY,p.r,0,Math.PI*2);rx2.strokeStyle=`rgba(0,184,255,${p.a})`;rx2.lineWidth=1.5;rx2.stroke();p.r+=1.6;p.a-=.013;});
-  // center dot
-  rx2.beginPath();rx2.arc(CX,CY,5,0,Math.PI*2);rx2.fillStyle='rgba(0,255,200,.9)';rx2.fill();
-  // location label
-  rx2.font='8px "JetBrains Mono",monospace';rx2.fillStyle='rgba(0,255,200,.3)';rx2.textAlign='center';
+  pulses.forEach(p=>{rx2.beginPath();rx2.arc(CX,CY,p.r,0,Math.PI*2);rx2.strokeStyle=`rgba(${cSec},${p.a})`;rx2.lineWidth=1.5;rx2.stroke();p.r+=1.6;p.a-=.013;});
+  
+  rx2.beginPath();rx2.arc(CX,CY,5,0,Math.PI*2);rx2.fillStyle=`rgba(${cPrim},.9)`;rx2.fill();
+  
+  rx2.font='8px "JetBrains Mono",monospace';rx2.fillStyle=`rgba(${cPrim},.3)`;rx2.textAlign='center';
   rx2.fillText('PUNE, IN — OPEN TO REMOTE',CX,270);
   requestAnimationFrame(rd);
 })();
